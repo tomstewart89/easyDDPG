@@ -3,7 +3,7 @@ from tqdm import tqdm
 from agent import Agent
 from experience_replay import Experience
 from utils import run_env
-from introspect import test_forward_prediction
+from introspect import *
 
 if __name__ == "__main__":
 
@@ -13,10 +13,8 @@ if __name__ == "__main__":
     replay_memory = Experience(1e5)
     agent = Agent(env)
 
-    test_forward_prediction(agent, env)
-
     # Gather up a heap of experience
-    for _ in tqdm(range(500)):
+    for _ in tqdm(range(10)):
         for transition in run_env(env, lambda s: env.action_space.sample()):
             replay_memory.store(*transition)
 
@@ -26,7 +24,14 @@ if __name__ == "__main__":
     agent.train_environment_model(states, actions, next_states)
     agent.train_reward_function(states, actions, rewards)
 
+    test_forward_prediction(agent, env)
+
     # Now have the agent learn its value function using its own internal models
     for _ in range(2):
         agent.train_value_function(states)
         agent.train_policy(states)
+
+    plot_value_function(agent, states)
+    plot_policy(agent, states)
+
+    plot_trajectories(agent, env)

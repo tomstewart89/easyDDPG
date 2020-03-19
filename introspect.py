@@ -1,4 +1,5 @@
 import numpy as np
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
@@ -6,7 +7,6 @@ from utils import run_env
 
 
 def test_forward_prediction(agent, env):
-
     transitions = [trans for trans in run_env(env, lambda s: env.action_space.sample())]
     states, actions, rewards, _, _ = map(list, zip(*transitions))
 
@@ -36,26 +36,53 @@ def test_forward_prediction(agent, env):
     plt.show()
 
 
-def plot_value_function(agent):
-    # V = value_function(states).numpy()
-    # color = cm.jet((V - V.min()) / (V - V.min()).max())
+def plot_trajectories(agent, env, episode_length=100):
 
-    # fig = plt.figure(figsize=(12, 10))
-    # ax = fig.add_subplot(111, projection='3d')
-    # ax.scatter(states[:,0], states[:,1], states[:,2], c=color.squeeze())
+    trajectories = []
 
-    # plt.show()
-    pass
+    for i in tqdm(range(20)):
+        trajectories.append(
+            np.array(
+                [
+                    transition[0].squeeze()
+                    for transition in run_env(
+                        env,
+                        lambda s: agent.policy(s.reshape(3, 1)),
+                        max_steps=episode_length,
+                        render=False,
+                    )
+                ]
+            )
+        )
+
+    color = cm.jet(np.linspace(0.75, 1, 200))
+
+    fig = plt.figure(figsize=(12, 10))
+    ax = fig.add_subplot(111, projection="3d")
+
+    for trajectory in trajectories:
+        ax.scatter(trajectory[:, 0], trajectory[:, 1], trajectory[:, 2], c=color)
+
+    plt.show()
 
 
-def plot_policy(agent):
-    # S, _, _, _, terminal = replay_memory.sample(10000)
-    # A = policy(S).numpy()[:, 0]
-    # color = cm.jet((A - A.min()) / (A - A.min()).max())
+def plot_value_function(agent, states):
+    values = agent.value_function(states).numpy()
+    color = cm.jet((values - values.min()) / (values - values.min()).max())
 
-    # fig = plt.figure(figsize=(12, 10))
-    # ax = fig.add_subplot(111, projection="3d")
-    # ax.scatter(S[:, 0], S[:, 1], S[:, 2], c=color.squeeze())
+    fig = plt.figure(figsize=(12, 10))
+    ax = fig.add_subplot(111, projection="3d")
+    ax.scatter(states[:, 0], states[:, 1], states[:, 2], c=color.squeeze())
 
-    # plt.show()
-    pass
+    plt.show()
+
+
+def plot_policy(agent, states):
+    actions = agent.policy(states).numpy()[:, 0]
+    color = cm.jet((actions - actions.min()) / (actions - actions.min()).max())
+
+    fig = plt.figure(figsize=(12, 10))
+    ax = fig.add_subplot(111, projection="3d")
+    ax.scatter(states[:, 0], states[:, 1], states[:, 2], c=color.squeeze())
+
+    plt.show()
