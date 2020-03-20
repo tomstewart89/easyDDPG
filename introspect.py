@@ -37,7 +37,6 @@ def test_forward_prediction(agent, env):
 
 
 def plot_trajectories(agent, env, episode_length=100):
-
     trajectories = []
 
     for i in tqdm(range(20)):
@@ -47,15 +46,15 @@ def plot_trajectories(agent, env, episode_length=100):
                     transition[0].squeeze()
                     for transition in run_env(
                         env,
-                        lambda s: agent.policy(s.reshape(3, 1)),
+                        lambda s: agent.policy(s.reshape(-1, 3)),
                         max_steps=episode_length,
-                        render=False,
+                        render=True,
                     )
                 ]
             )
         )
 
-    color = cm.jet(np.linspace(0.75, 1, 200))
+    color = cm.jet(np.linspace(0.75, 1, trajectories[0].shape[0]))
 
     fig = plt.figure(figsize=(12, 10))
     ax = fig.add_subplot(111, projection="3d")

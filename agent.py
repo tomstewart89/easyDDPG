@@ -59,12 +59,11 @@ class Agent:
         )
 
     def train_policy(self, states):
-        """ Train the policy by maximising the value of a dataset of states.
+        """ Train the policy by maximising the value function over of a dataset of states.
         """
         dataset = tf.data.Dataset.from_tensor_slices(states.astype(np.float32))
 
         for i, S in tqdm(enumerate(dataset.batch(32))):
-            # Optimize the actor
             with tf.GradientTape() as g:
                 state_action = tf.concat([S, self.policy(S)], axis=1)
                 reward = self.reward_function(state_action)

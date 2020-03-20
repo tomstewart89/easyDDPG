@@ -14,7 +14,7 @@ if __name__ == "__main__":
     agent = Agent(env)
 
     # Gather up a heap of experience
-    for _ in tqdm(range(10)):
+    for _ in tqdm(range(200)):
         for transition in run_env(env, lambda s: env.action_space.sample()):
             replay_memory.store(*transition)
 
@@ -27,7 +27,7 @@ if __name__ == "__main__":
     test_forward_prediction(agent, env)
 
     # Now have the agent learn its value function using its own internal models
-    for _ in range(2):
+    for _ in range(5):
         agent.train_value_function(states)
         agent.train_policy(states)
 
