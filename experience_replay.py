@@ -1,12 +1,18 @@
 from collections import deque
 import random
 import numpy as np
+import pickle as pkl
 
 
 class Experience:
-    def __init__(self, bufferSize=1e5):
-        np.random.seed(0)
-        self.buffer = deque([], int(bufferSize))
+    def __init__(self, bufferSize=1e5, filepath=None):
+        np.random.seed()
+
+        if filepath is not None:
+            with open(filepath, "rb") as f:
+                self.buffer = pkl.load(f)
+        else:
+            self.buffer = deque([], int(bufferSize))
 
     def sample(self, batchSize=1024):
         batchSize = min(len(self.buffer), batchSize)
@@ -23,6 +29,10 @@ class Experience:
 
     def store(self, state, action, reward, nextState, not_terminal):
         self.buffer.append([state, action, reward, nextState, not_terminal])
+
+    def save(self, filepath):
+        with open(filepath) as f:
+            pkl.dump(self.buffer, f)
 
     def __len__(self):
         return len(self.buffer)

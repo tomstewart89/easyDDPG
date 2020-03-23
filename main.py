@@ -14,8 +14,10 @@ if __name__ == "__main__":
     agent = Agent(env)
 
     # Gather up a heap of experience
-    for _ in tqdm(range(200)):
-        for transition in run_env(env, lambda s: env.action_space.sample()):
+    for _ in tqdm(range(500)):
+        for transition in run_env(
+            env, lambda s: agent.policy(s.reshape(-1, 3)).numpy().reshape(1,)
+        ):
             replay_memory.store(*transition)
 
     states, actions, rewards, next_states, _ = replay_memory.sample(len(replay_memory))

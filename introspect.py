@@ -54,7 +54,7 @@ def plot_trajectories(agent, env, episode_length=100):
             )
         )
 
-    color = cm.jet(np.linspace(0.75, 1, trajectories[0].shape[0]))
+    color = cm.jet(np.linspace(0, 1, trajectories[0].shape[0]))
 
     fig = plt.figure(figsize=(12, 10))
     ax = fig.add_subplot(111, projection="3d")
