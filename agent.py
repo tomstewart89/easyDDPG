@@ -25,37 +25,38 @@ class Agent:
             the next state for a given start state and action
         """
         self.environment_model.fit(
-            np.hstack([states, actions]), next_states, epochs=10, batch_size=32
+            np.hstack([states, actions]), next_states, epochs=3, batch_size=32
         )
 
     def train_reward_function(self, states, actions, rewards):
         """ Using a dataset of states and actions, train a reward function to predict the reward
             (not the cumulative reward, just the one received at this timestep)
         """
-        self.reward_function.fit(
-            np.hstack([states, actions]), rewards, epochs=10, batch_size=32
-        )
+        self.reward_function.fit(np.hstack([states, actions]), rewards, epochs=3, batch_size=32)
 
-    def train_value_function(self, initial_states, trajectory_length=50):
-        """ Starting from a set of initial states, use the environment model and the reward function to
-            estimate the reward that the agent will accumulate in the immediate future and use that
-            to train a value function.
+    def train_value_function(
+        self, initial_states, initial_rewards, next_states, trajectory_length=50
+    ):
+        """ Starting from a set of initial states, calculate the first step of the value using the information in the
+            replay buffer and then forward predict the rest of the trajectory using the environment model and the reward function
+            to calculate a target for the value function.
         """
-        states = initial_states
-        values = tf.zeros(shape=(states.shape[0], 1), dtype=tf.float32)
+
+        states = next_states
+        values = initial_rewards
 
         # Play out a trajectory of length T
-        for t in tqdm(range(trajectory_length)):
+        for t in tqdm(range(1, trajectory_length + 1)):
             actions = self.policy(states)
             states = self.environment_model(np.hstack([states, actions]))
             rewards = self.reward_function(np.hstack([states, actions]))
             values = values + rewards * self.gamma ** t
 
         # Bottom out the recursion using the value function
-        values = values + self.value_function(states) * self.gamma ** (t + 1)
+        values = values + self.value_function(states) * self.gamma ** (trajectory_length + 1)
 
         self.value_function.fit(
-            tf.convert_to_tensor(initial_states), values, epochs=10, batch_size=32
+            tf.convert_to_tensor(initial_states), values, epochs=3, batch_size=32
         )
 
     def train_policy(self, states):

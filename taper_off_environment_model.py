@@ -17,7 +17,11 @@ if __name__ == "__main__":
     agent.train_environment_model(states, actions, next_states)
     agent.train_reward_function(states, actions, rewards)
 
-    for t in reversed(range(0, 50, 10)):
-        agent.train_value_function(states, rewards, next_states, trajectory_length=t)
+    agent.train_value_function(states, rewards, next_states, trajectory_length=0)
 
     plot_value_function(agent, states)
+
+    # for t in reversed(range(0, 50, 10)):
+    #     agent.train_value_function(states, rewards, next_states, trajectory_length=t)
+
+    # plot_value_function(agent, states)

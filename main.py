@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     # Now have the agent learn its value function using its own internal models
     for _ in range(5):
-        agent.train_value_function(states)
+        agent.train_value_function(states, rewards, next_states)
         agent.train_policy(states)
 
     plot_value_function(agent, states)
