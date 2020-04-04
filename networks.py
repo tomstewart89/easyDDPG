@@ -1,5 +1,6 @@
 import tensorflow as tf
 import numpy as np
+from utils import log_normal_pdf
 
 
 class EnvironmentModel(tf.keras.Model):
@@ -94,7 +95,7 @@ class FamiliarityFunction(tf.keras.Model):
     catastrophic forgetting or experience replay (in theory)
     """
 
-    def __init__(self, env, latent_dim):
+    def __init__(self, env, latent_dim=2):
         super(FamiliarityFunction, self).__init__()
 
         state_dim = np.prod(env.observation_space.shape)
@@ -116,30 +117,19 @@ class FamiliarityFunction(tf.keras.Model):
             ]
         )
 
-        self.optimizer = tf.keras.optimizers.Adam(1e-4)
-
-    def log_normal_pdf(self, sample, mean, logvar):
-        log2pi = tf.math.log(2.0 * np.pi)
-        return tf.reduce_sum(
-            -0.5 * ((sample - mean) ** 2.0 * tf.exp(-logvar) + logvar + log2pi), axis=1
-        )
-
     @tf.function
-    def compute_loss(self, state_action):
+    def call(self, state_action):
         mean, logvar = tf.split(self.inference_net(state_action), num_or_size_splits=2, axis=1)
         z = tf.random.normal(shape=mean.shape) * tf.exp(logvar * 0.5) + mean
-        state_action_reconstructed = self.generative_net(z)
-
-        logpx_z = -tf.keras.losses.mse(state_action_reconstructed, state_action)
-        logpz = self.log_normal_pdf(z, 0.0, 0.0)
-        logqz_x = self.log_normal_pdf(z, mean, logvar)
-        return -tf.reduce_mean(logpx_z + logpz - logqz_x)
+        return self.generative_net(z)
 
     @tf.function
-    def train(self, state_action):
-        with tf.GradientTape() as tape:
-            loss = self.compute_loss(state_action)
-            # print(loss.numpy())
+    def loss(self, x, C=-2.0):
+        mean, logvar = tf.split(self.inference_net(x), num_or_size_splits=2, axis=1)
+        z = tf.random.normal(shape=mean.shape) * tf.exp(logvar * 0.5) + mean
 
-        gradients = tape.gradient(loss, self.trainable_variables)
-        self.optimizer.apply_gradients(zip(gradients, self.trainable_variables))
+        logpx_z = log_normal_pdf(self.generative_net(z), x, C)
+        logpz = log_normal_pdf(z, 0.0, 0.0)
+        logqz_x = log_normal_pdf(z, mean, logvar)
+
+        return -tf.reduce_mean(logpx_z + logpz - logqz_x)
