@@ -3,22 +3,24 @@ from tqdm import tqdm
 import random
 import numpy as np
 import tensorflow as tf
-from networks import ValueFunction, Policy, EnvironmentModel, RewardFunction
+from networks import ValueFunction, Policy, EnvironmentModel, RewardFunction, FamiliarityFunction
 
 
 class Agent:
-    def __init__(self, env, gamma=0.95):
+    def __init__(self, env, gamma=0.95, latent_dim=2):
         self.gamma = gamma
         self.value_function = ValueFunction(env)
         self.environment_model = EnvironmentModel(env)
         self.reward_function = RewardFunction(env)
         self.policy = Policy(env)
+        self.familiarity_function = FamiliarityFunction(env, latent_dim)
 
         self.value_function.compile(optimizer=tf.keras.optimizers.Adam(), loss="mse")
         self.environment_model.compile(optimizer=tf.keras.optimizers.Adam(), loss="mse")
         self.reward_function.compile(optimizer=tf.keras.optimizers.Adam(), loss="mse")
         self.policy.compile(optimizer=tf.keras.optimizers.Adam(), loss="mse")
-        self.policy_optimizer = tf.keras.optimizers.SGD(learning_rate=0.01)
+        self.policy_optimiser = tf.keras.optimizers.SGD(learning_rate=0.01)
+        self.familiarity_optimiser = tf.keras.optimizers.Adam()
 
     def train_environment_model(self, states, actions, next_states):
         """ Using a dataset of states and actions, train an environment model to predict
@@ -74,6 +76,27 @@ class Agent:
                 loss = -tf.reduce_mean(value)
 
             policy_gradient = g.gradient(loss, self.policy.trainable_variables)
-            self.policy_optimizer.apply_gradients(
+            self.policy_optimiser.apply_gradients(
                 zip(policy_gradient, self.policy.trainable_variables)
             )
+
+    def train_familiarity_function(self, states, actions, epochs=3):
+        """ Train the familiarity function to effeciently encode states and actions so that
+            we can easily spot new and interesting states while exploring.
+        """
+        dataset = (
+            tf.data.Dataset.from_tensor_slices(np.hstack([states, actions]).astype(np.float32))
+            .batch(32)
+            .shuffle(10000)
+        )
+
+        for _ in tqdm(range(epochs)):
+            for state_action in dataset:
+
+                with tf.GradientTape() as tape:
+                    loss = self.familiarity_function.loss(state_action)
+
+                gradients = tape.gradient(loss, self.familiarity_function.trainable_variables)
+                self.familiarity_optimiser.apply_gradients(
+                    zip(gradients, self.familiarity_function.trainable_variables)
+                )

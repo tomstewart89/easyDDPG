@@ -1,12 +1,7 @@
-import tensorflow as tf
-from utils import log_normal_pdf
-from networks import FamiliarityFunction
-from experience_replay import Experience
-import numpy as np
-import matplotlib.pyplot as plt
 import gym
-from tqdm import tqdm
-
+from agent import Agent
+from experience_replay import Experience
+from introspect import plot_familiarity_latent_space, plot_familiarity_sample
 
 if __name__ == "__main__":
 
@@ -14,18 +9,11 @@ if __name__ == "__main__":
     env.seed(0)
 
     replay_memory = Experience(filepath="pendulum_experience.pkl")
-    familiarity = FamiliarityFunction(env, 2)
-    optimizer = tf.keras.optimizers.Adam()
+    agent = Agent(env, latent_dim=2)
 
     states, actions, rewards, next_states, _ = replay_memory.sample(len(replay_memory))
-    dataset = tf.data.Dataset.from_tensor_slices(np.hstack([states, actions]).astype(np.float32))
 
-    for epoch in range(3):
-        for state_action in dataset.batch(32):
+    agent.train_familiarity_function(states, actions, epochs=3)
 
-            with tf.GradientTape() as tape:
-                loss = familiarity.loss(state_action)
-
-            gradients = tape.gradient(loss, familiarity.trainable_variables)
-            optimizer.apply_gradients(zip(gradients, familiarity.trainable_variables))
-            print(loss.numpy())
+    plot_familiarity_latent_space(agent, states, actions)
+    plot_familiarity_sample(agent, 1000)

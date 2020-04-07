@@ -98,6 +98,7 @@ class FamiliarityFunction(tf.keras.Model):
     def __init__(self, env, latent_dim=2):
         super(FamiliarityFunction, self).__init__()
 
+        self.latent_dim = latent_dim
         state_dim = np.prod(env.observation_space.shape)
         action_dim = np.prod(env.action_space.shape)
 
@@ -105,7 +106,7 @@ class FamiliarityFunction(tf.keras.Model):
             [
                 tf.keras.layers.Dense(400, activation="relu"),
                 tf.keras.layers.Dense(300, activation="relu"),
-                tf.keras.layers.Dense(latent_dim + latent_dim),
+                tf.keras.layers.Dense(self.latent_dim * 2),
             ]
         )
 
@@ -124,11 +125,16 @@ class FamiliarityFunction(tf.keras.Model):
         return self.generative_net(z)
 
     @tf.function
-    def loss(self, x, C=-2.0):
+    def sample(self, n):
+        z = tf.random.normal(shape=(n, self.latent_dim))
+        return self.generative_net(z)
+
+    @tf.function
+    def loss(self, x, C=-6.0):
         mean, logvar = tf.split(self.inference_net(x), num_or_size_splits=2, axis=1)
         z = tf.random.normal(shape=mean.shape) * tf.exp(logvar * 0.5) + mean
 
-        logpx_z = log_normal_pdf(self.generative_net(z), x, C)
+        logpx_z = log_normal_pdf(x, self.generative_net(z), C)
         logpz = log_normal_pdf(z, 0.0, 0.0)
         logqz_x = log_normal_pdf(z, mean, logvar)
 

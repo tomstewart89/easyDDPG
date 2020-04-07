@@ -1,4 +1,5 @@
 import numpy as np
+import tensorflow as tf
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
@@ -83,5 +84,31 @@ def plot_policy(agent, states):
     fig = plt.figure(figsize=(12, 10))
     ax = fig.add_subplot(111, projection="3d")
     ax.scatter(states[:, 0], states[:, 1], states[:, 2], c=color.squeeze())
+
+    plt.show()
+
+
+def plot_familiarity_latent_space(agent, states, actions):
+    mean, logvar = tf.split(
+        agent.familiarity_function.inference_net(np.hstack([states, actions]).astype(np.float32)),
+        num_or_size_splits=2,
+        axis=1,
+    )
+
+    z = tf.random.normal(shape=mean.shape) * tf.exp(logvar * 0.5) + mean
+
+    for i, z_i in enumerate(z.numpy().T):
+        plt.subplot(agent.familiarity_function.latent_dim, 1, i + 1)
+        plt.hist(z_i, bins=50, range=(-3, 3))
+
+    plt.show()
+
+
+def plot_familiarity_sample(agent, n_samples):
+    samples = agent.familiarity_function.sample(n_samples)
+
+    fig = plt.figure(figsize=(12, 10))
+    ax = fig.add_subplot(111, projection="3d")
+    ax.scatter(samples[:, 0], samples[:, 1], samples[:, 2])
 
     plt.show()
