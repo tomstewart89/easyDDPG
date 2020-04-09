@@ -104,7 +104,6 @@ class FamiliarityFunction(tf.keras.Model):
 
         self.latent_dim = latent_dim
         state_dim = np.prod(env.observation_space.shape)
-        action_dim = np.prod(env.action_space.shape)
 
         self.inference_net = tf.keras.Sequential(
             [
@@ -118,13 +117,13 @@ class FamiliarityFunction(tf.keras.Model):
             [
                 tf.keras.layers.Dense(300, activation="relu"),
                 tf.keras.layers.Dense(400, activation="relu"),
-                tf.keras.layers.Dense(state_dim + action_dim, activation=None),
+                tf.keras.layers.Dense(state_dim, activation=None),
             ]
         )
 
     @tf.function
-    def call(self, state_action):
-        mean, logvar = tf.split(self.inference_net(state_action), num_or_size_splits=2, axis=1)
+    def call(self, states):
+        mean, logvar = tf.split(self.inference_net(states), num_or_size_splits=2, axis=1)
         z = tf.random.normal(shape=mean.shape) * tf.exp(logvar * 0.5) + mean
         return self.generative_net(z)
 
@@ -134,11 +133,11 @@ class FamiliarityFunction(tf.keras.Model):
         return self.generative_net(z)
 
     @tf.function
-    def loss(self, x, C=-6.0):
-        mean, logvar = tf.split(self.inference_net(x), num_or_size_splits=2, axis=1)
+    def loss(self, states, decoder_logvar=-6.0):
+        mean, logvar = tf.split(self.inference_net(states), num_or_size_splits=2, axis=1)
         z = tf.random.normal(shape=mean.shape) * tf.exp(logvar * 0.5) + mean
 
-        logpx_z = log_normal_pdf(x, self.generative_net(z), C)
+        logpx_z = log_normal_pdf(states, self.generative_net(z), decoder_logvar)
         logpz = log_normal_pdf(z, 0.0, 0.0)
         logqz_x = log_normal_pdf(z, mean, logvar)
 

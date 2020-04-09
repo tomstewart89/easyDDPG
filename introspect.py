@@ -88,9 +88,9 @@ def plot_policy(agent, states):
     plt.show()
 
 
-def plot_familiarity_latent_space(agent, states, actions):
+def plot_familiarity_latent_space(agent, states):
     mean, logvar = tf.split(
-        agent.familiarity_function.inference_net(np.hstack([states, actions]).astype(np.float32)),
+        agent.familiarity_function.inference_net(states.astype(np.float32)),
         num_or_size_splits=2,
         axis=1,
     )

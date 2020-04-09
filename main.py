@@ -25,7 +25,7 @@ if __name__ == "__main__":
     # Now have the agent learn about its environment
     agent.train_environment_model(states, actions, next_states)
     agent.train_reward_function(states, actions, rewards)
-    agent.train_familiarity_function(states, actions)
+    agent.train_familiarity_function(states)
 
     test_forward_prediction(agent, env)
 

@@ -80,21 +80,19 @@ class Agent:
                 zip(policy_gradient, self.policy.trainable_variables)
             )
 
-    def train_familiarity_function(self, states, actions, epochs=3):
-        """ Train the familiarity function to effeciently encode states and actions so that
+    def train_familiarity_function(self, states, epochs=3):
+        """ Train the familiarity function to effeciently encode states so that
             we can easily spot new and interesting states while exploring.
         """
         dataset = (
-            tf.data.Dataset.from_tensor_slices(np.hstack([states, actions]).astype(np.float32))
-            .batch(32)
-            .shuffle(10000)
+            tf.data.Dataset.from_tensor_slices(states.astype(np.float32)).batch(32).shuffle(10000)
         )
 
         for _ in tqdm(range(epochs)):
-            for state_action in dataset:
+            for state in dataset:
 
                 with tf.GradientTape() as tape:
-                    loss = self.familiarity_function.loss(state_action)
+                    loss = self.familiarity_function.loss(state)
 
                 gradients = tape.gradient(loss, self.familiarity_function.trainable_variables)
                 self.familiarity_optimiser.apply_gradients(

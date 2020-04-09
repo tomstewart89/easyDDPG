@@ -13,15 +13,10 @@ if __name__ == "__main__":
 
     agent = Agent(env, latent_dim=3)
 
-    on_pol_states, on_pol_actions, _, _, _ = on_policy_replay_memory.sample(
-        len(on_policy_replay_memory)
-    )
+    on_pol_states, _, _, _, _ = on_policy_replay_memory.sample(len(on_policy_replay_memory))
+    expl_states, _, _, _, _ = exploratory_replay_memory.sample(len(exploratory_replay_memory))
 
-    expl_states, expl_actions, _, _, _ = exploratory_replay_memory.sample(
-        len(exploratory_replay_memory)
-    )
+    agent.train_familiarity_function(on_pol_states, epochs=5)
 
-    agent.train_familiarity_function(on_pol_states, on_pol_actions, epochs=5)
-
-    plot_familiarity_latent_space(agent, states, actions)
+    plot_familiarity_latent_space(agent, on_pol_states)
     plot_familiarity_sample(agent, 1000)
