@@ -8,12 +8,20 @@ if __name__ == "__main__":
     env = gym.make("Pendulum-v0")
     env.seed(0)
 
-    replay_memory = Experience(filepath="pendulum_experience.pkl")
-    agent = Agent(env, latent_dim=2)
+    on_policy_replay_memory = Experience(filepath="on_policy_experience.pkl")
+    exploratory_replay_memory = Experience(filepath="exploratory_experience.pkl")
 
-    states, actions, rewards, next_states, _ = replay_memory.sample(len(replay_memory))
+    agent = Agent(env, latent_dim=3)
 
-    agent.train_familiarity_function(states, actions, epochs=3)
+    on_pol_states, on_pol_actions, _, _, _ = on_policy_replay_memory.sample(
+        len(on_policy_replay_memory)
+    )
+
+    expl_states, expl_actions, _, _, _ = exploratory_replay_memory.sample(
+        len(exploratory_replay_memory)
+    )
+
+    agent.train_familiarity_function(on_pol_states, on_pol_actions, epochs=5)
 
     plot_familiarity_latent_space(agent, states, actions)
     plot_familiarity_sample(agent, 1000)

@@ -19,6 +19,7 @@ class EnvironmentModel(tf.keras.Model):
         self.dense2 = tf.keras.layers.Dense(300, activation="relu")
         self.dense3 = tf.keras.layers.Dense(self.state_dim, activation=None)
 
+    @tf.function
     def call(self, state_action):
         x = self.dense1(state_action)
         x = self.dense2(x)
@@ -42,6 +43,7 @@ class RewardFunction(tf.keras.Model):
         self.dense2 = tf.keras.layers.Dense(300, activation="relu")
         self.dense3 = tf.keras.layers.Dense(1, activation=None)
 
+    @tf.function
     def call(self, state):
         x = self.dense1(state)
         x = self.dense2(x)
@@ -62,6 +64,7 @@ class ValueFunction(tf.keras.Model):
         self.dense2 = tf.keras.layers.Dense(300, activation="relu")
         self.dense3 = tf.keras.layers.Dense(1, activation=None)
 
+    @tf.function
     def call(self, state):
         x = self.dense1(state)
         x = self.dense2(x)
@@ -83,6 +86,7 @@ class Policy(tf.keras.Model):
         self.dense2 = tf.keras.layers.Dense(300, activation="relu")
         self.dense3 = tf.keras.layers.Dense(action_dim, activation="tanh")
 
+    @tf.function
     def call(self, state):
         x = self.dense1(state)
         x = self.dense2(x)

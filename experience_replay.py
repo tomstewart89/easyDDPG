@@ -31,7 +31,7 @@ class Experience:
         self.buffer.append([state, action, reward, nextState, not_terminal])
 
     def save(self, filepath):
-        with open(filepath) as f:
+        with open(filepath, "wb") as f:
             pkl.dump(self.buffer, f)
 
     def __len__(self):
